@@ -96,6 +96,7 @@ public class ProductService {
 		}
 	}
 
+	@SuppressWarnings("unchecked")
 	@Transactional(readOnly = true)
 	public Page<ProductDTO> findAllPaged(String name, String categoryId, Pageable pageable) {	
 		
@@ -117,7 +118,7 @@ public class ProductService {
 		List<Product> entities = repository.searchProductsWithCategories(productIds);
 		
 		//Gerar uma nova lista de entities ordenada baseada na ordenação da minha pagina(page.getContent())
-		entities = Utils.replace(page.getContent(), entities);
+		entities = (List<Product>) Utils.replace(page.getContent(), entities);
 		
 		//Converter as entidades para dto
 		List<ProductDTO> dtos = entities.stream().map(p -> new ProductDTO(p, p.getCategories())).toList();
