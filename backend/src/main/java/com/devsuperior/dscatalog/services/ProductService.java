@@ -7,6 +7,7 @@ import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -95,7 +96,9 @@ public class ProductService {
 	}
 
 	@Transactional(readOnly = true)
-	public Page<ProductProjection> findAllPaged(String name, String categoryId, Pageable pageable) {	
+	public Page<ProductDTO> findAllPaged(String name, String categoryId, Pageable pageable) {	
+		
+		//preparar a lista de categoria
 		List<Long> categoryIds = Arrays.asList();
 		if (!"0".equals(categoryId)) {
 			String[] vet = categoryId.split(",");
@@ -103,7 +106,22 @@ public class ProductService {
 			categoryIds = list.stream().map(x -> Long.parseLong(x)).toList();
 		}
 		
-		return repository.searchProducts(categoryIds, name, pageable);
+		//Fazer a consulta original da pagina
+		Page<ProductProjection> page = repository.searchProducts(categoryIds, name, pageable);
+		
+		//Pegar os ids dos produtos
+		List<Long> productIds = page.map(x -> x.getId()).toList();
+		
+		//Usar os ids dos produtos como argumento para chamar os produtos com as categorias buscando todos juntos
+		List<Product> entities = repository.searchProductsWithCategories(productIds);
+		
+		//Converter as entidades para dto
+		List<ProductDTO> dtos = entities.stream().map(p -> new ProductDTO(p, p.getCategories())).toList();
+		
+		//Gerar um novo obj de pagina aproveitando os dados de pagina da primeira pagina original
+		Page<ProductDTO> pageDto = new PageImpl<>(dtos, page.getPageable(), page.getTotalElements());
+		
+		return pageDto;
 	}
 
 }
