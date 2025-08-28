@@ -45,9 +45,8 @@ public class UserResource {
 		return ResponseEntity.ok().body(dto);
 	}
 	
-	@PreAuthorize("hasRole('ROLE_ADMIN')") 
 	@PostMapping
-	public ResponseEntity<UserDTO> insert(@Valid @RequestBody UserInsertDTO dto) {
+	public ResponseEntity<UserDTO> insert(@RequestBody @Valid UserInsertDTO dto) {
 		UserDTO newDto = service.insert(dto);
 		URI uri = ServletUriComponentsBuilder.fromCurrentRequest().path("//{id}")
 				.buildAndExpand(newDto.getId()).toUri();
